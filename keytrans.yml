@@ -1,0 +1,16 @@
+---
+- name: Sending over ssh key to a brand new machine
+  hosts: vm4
+  tasks:
+    - name: As it is a brand new machine, first create the dir that holds key
+      file:
+        state: directory
+        path: /root/.ssh        
+    - name: create the file i.e authorized_keys
+      file:
+        state: touch
+        path: /root/.ssh/authorized_keys
+    - name: Copy over the pub key
+      copy:
+        src: /root/.ssh/id_rsa.pub
+        dest: /root/.ssh/authorized_keys

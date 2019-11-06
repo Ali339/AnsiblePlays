@@ -1,0 +1,31 @@
+---
+- name: Updating the kernel of centos 6 
+  hosts: myservers
+  tasks:
+  - name: is app running?
+    shell:
+      if ps -ef |grep 'httpd' | grep -v grep > /dev/null ; then echo 'APP_running'  ; else echo 'APP_not_running' ; fi
+    register: app_status
+  - debug:
+      var: app_status.stdout
+  - name: Decision based on App status
+    fail:
+      msg: "App is needed to stop--- {{ansible_hostname}} : {{ ansible_default_ipv4.address }}"
+    when: app_status.stdout == "APP_running"
+  - name: Decision based on the distribution of the system or version
+    fail:
+      msg: "Not a CentOS 6 --- {{ ansible_hostname}} : {{ ansible_default_ipv4.address }}"  
+
+    when: ansible_distribution_major_version != '6'
+  - name: after passing all requirements patch the system
+    yum: 
+      name: kernel
+      state: latest
+  - name: After succeful patch, system needs to be rebooted to boot in newly installed, updated version. If system had already updated kernel, No need to reboot
+    shell:
+      newker=$(rpm -qa --last kernel| head -1| awk {'print $1'}) ; curker="kernel-"$(uname -r) ; if [[ $newker != $curker ]] ; then echo "Reboot_required" ; else echo "Reboot_not_rquired" ; fi
+    register: reboot_status
+  - debug:
+      msg:
+        "The System {{ ansible_hostname }} --- {{ansible_default_ipv4.address}} --- {{ reboot_status.stdout }}" 
+    

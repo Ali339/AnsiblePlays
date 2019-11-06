@@ -1,0 +1,16 @@
+---
+- name: illustrating the use of variables
+  hosts: myservers
+  vars:
+    remote_dir: /tmp/ansible/mydir
+    test_file: /root/yaml/test.txt
+  tasks:
+    - name: Creating a remote dir
+      file:
+        state: directory
+        recurse: yes
+        path: "{{ remote_dir }}"
+    - name: copy facts over the remote clients
+      copy:
+        src: "{{ test_file }}"
+        dest: "{{ remote_dir }}"

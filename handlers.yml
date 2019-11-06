@@ -1,0 +1,16 @@
+---
+- name: How to use handlers in the ansible (simple example)
+  hosts: vm1
+  tasks:
+    - name: install vsftpd
+      yum: 
+        name: vsftpd
+        state: latest
+      notify:
+        - start_ftp
+  handlers:
+    - name: start_ftp
+      service:
+        name: vsftpd
+        state: started
+        enabled: true

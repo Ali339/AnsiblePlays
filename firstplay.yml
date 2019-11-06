@@ -1,0 +1,30 @@
+---
+- name: first play book installing http and sevices started and enabled
+  hosts:  myservers
+  tasks:
+    - name: installing 
+      yum: 
+        name: httpd
+        state: present
+      when: ansible_distribution_major_version == "6"
+    - name: start and enabled the service
+      service:
+        name: httpd
+        state: started
+        enabled: true
+      when: ansible_distribution_major_version == "6"
+    - name: stopping the iptables
+      service:
+        name: iptables
+        state: stopped
+        enabled: false
+      when: ansible_distribution_major_version == "6"
+    - name: dealing the selinux
+      shell:
+        setenforce 0
+    - name: copy the contents
+      copy:
+        src: /root/index.html
+        dest: /var/www/html
+      when: ansible_distribution_major_version == "6"
+         

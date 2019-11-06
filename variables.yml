@@ -1,0 +1,15 @@
+---
+- name: Using variables  
+  hosts: all
+  vars:
+    web: httpd
+    nfs_pack: bind-utils
+    ntp_pack: ntp
+  tasks:
+    - name: install the packages {{web}}, {{nfs_pack}}, {{ntp_pack}}
+      yum:
+        name:
+          - "{{web}}"
+          - "{{nfs_pack}}"
+          - "{{ntp_pack}}"
+        state: absent

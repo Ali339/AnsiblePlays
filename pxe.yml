@@ -1,0 +1,46 @@
+---
+- name: Configuring the Pxe
+  hosts: vm1
+  vars:
+    packages: 
+      - vsftpd
+      - tftp-server
+      - dhcp
+      - syslinux
+    services:
+      - vsftpd
+      - xinetd
+      - dhcpd
+
+  tasks:
+
+  ########################################
+  #PLAY 1: Installing the rquired packages 
+  
+    - name: Installing the vsfdtpd, tftp-server, dhcp and syslinux
+      yum:
+        name: "{{item }}"
+      with_items:
+        - "{{ packages}}"
+  ##########################################
+  #Play 2: Configuring the ftp server
+      
+  #  - name: mounting the iso over the mnt
+  #    shell: mount -o loop /dev/sr0 /mnt
+    - name: Copying iso image under ftp DocumentRoot
+      copy:
+        src:  /media/
+        remote_src: yes
+        dest: /var/ftp/pub
+  ###########################################
+  #Play 3: Configuring the tftp-server
+    - name: Enabling the tftp in it config file
+      replace:
+        path: /etc/xinetd.d/tftp
+        regexp: yes
+        replace: no
+    - name: Copying boot files under tftp DocumentRoot
+      copy:
+        src: /var/ftp/pub/isolinux/
+        remote_src: yes
+        dest: /var/lib/tftpboot

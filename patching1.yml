@@ -1,0 +1,63 @@
+---
+- name: PATCHING USING ANSIBLE
+  hosts: myservers
+  tasks:
+  - name: Check the status of the App (running??Skip--Stopped--Good to go to next step )
+###################################################################################################################################################################################
+# If app is running, there will be the processes initiated by the app in the process table. Grep the processes with the name of the app,                   ########################
+# when you are grepping a process with a name. There will be an entry for that grep process  "root 2381  2224  0 03:38 pts/000:00:00 grep httpd".          ########################
+#You need to rule that out. For that "I am using grep -v grep". Nullify the out put, you only need exit status of the command, if it is anything other     ########################
+# than 0 (means there were app related processes), your if statement is true, it will invoke "then" clause otherwise else clause. You are registering      ########################
+# the output of previous echo command in a variable for next comparisons to decide, playbook should skip or proceed.                                       ######################## 
+###################################################################################################################################################################################
+    shell:
+      if ps -ef |grep 'httpd' | grep -v grep > /dev/null ; then echo 'APP_running'  ; else echo 'APP_not_running' ; fi
+    register: app_status
+###################################################################################################################################################################################
+#Just a little prompt on the screen, we could use 'msg' statement but here i am using var, means just spit out the value of the variable we set in the last #######################
+#step.                                                                                                                                                      #######################
+###################################################################################################################################################################################
+  - debug:
+      var: app_status.stdout
+  - name: Decision based on App status
+###################################################################################################################################################################################
+#In fail module, if 'when' condition is met, It's going to skip the whole process. Here I am try to filtering out the systems on which app is still running########################
+#While Apps or DBs are running, you try to make some updates, DATA can be compromised. Thats why, we need to make sure, Apps and DBs are down              ########################
+###################################################################################################################################################################################
+
+    fail:
+      msg: "App is needed to stop--- {{ansible_hostname}} : {{ ansible_default_ipv4.address }}"
+    when: app_status.stdout == "APP_running"
+###################################################################################################################################################################################
+#IT infrastructure can have different OS_family and distributions. As per instructions, I am using Ansible-facts to filter out all matchines               ########################
+#other than CENTOSE 6. There are alot of ansible-facts, these are great for comparisons as per your need and prerequisits                                  ########################
+###################################################################################################################################################################################
+
+  - name: Decision based on the distribution of the system or version
+    fail:
+      msg: "Not a CentOS 6 --- {{ ansible_hostname}} : {{ ansible_default_ipv4.address }}"  
+
+    when: ansible_distribution_major_version != '6'
+###################################################################################################################################################################################
+#After pre-requisites are fulfilled, here is simple yum module to update the kernel. In real field it can be whole bundle of softwares                    #########################
+###################################################################################################################################################################################
+  - name: after passing all requirements patch the system
+    yum: 
+      name: kernel
+      state: latest
+###################################################################################################################################################################################
+#Verify if patch is sucessful, you need to reboot. Here I am grepping the recently installed Kernel and current kernel, and comparing them. If both were###########################
+#were same, means system already had latest kernel. No need to reboot, otherwise you need to reboot                                                     ###########################
+###################################################################################################################################################################################
+
+  - name: After succeful patch, system needs to be rebooted to boot in newly installed, updated version. If system had already updated kernel, No need to reboot
+    shell:
+      newker=$(rpm -qa --last kernel| head -1| awk {'print $1'}) ; curker="kernel-"$(uname -r) ; if [[ $newker != $curker ]] ; then echo "Reboot_required" ; else echo "Reboot_not_rquired" ; fi
+    register: reboot_status
+  - debug:
+      msg:
+        "The System {{ ansible_hostname }} --- {{ansible_default_ipv4.address}} --- {{ reboot_status.stdout }}" 
+####################################################################################################################################################################################
+#By default, ansibles logs are off, go to ansible config file uncomment the file for log,s path. Make that file in logs (/var/log/ansible/ansible.) Everything will be logged there
+#You need these log to make your further  reports. I will share the output of this play book,                                                           ############################
+    

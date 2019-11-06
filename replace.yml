@@ -1,0 +1,10 @@
+---
+- name: Replacing an instance in the file
+  hosts: vm1
+  tasks:
+    - name: replace the string
+      replace:
+        path: '/root/myfile'
+        regexp: 'dog'
+        after: 'first'
+        replace: 'cat'

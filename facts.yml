@@ -1,0 +1,8 @@
+---
+- name: Illustrating the ansible facts
+  hosts: myservers
+  tasks:
+    - name: print the fdqn and ips of the managed nodes
+      debug:
+        msg: >
+          {{ansible_fqdn}}  =  {{ansible_default_ipv4.address}}

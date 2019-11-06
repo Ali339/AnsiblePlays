@@ -1,0 +1,19 @@
+---
+- name: Using a conditon in the play book
+  hosts: myservers
+  vars:
+    web_server: httpd   
+  tasks:
+    - name: Install httpd service 
+      yum: 
+        name:
+         - "{{ web_server }}"
+        state: latest
+      when: ansible_kernel == "2.6.32-754.el6.x86_64" and  ansible_distribution != "RedHat"
+    - name: start and enable the server
+      service:
+        name: 
+          - "{{ web_server}}" 
+        state: started
+        enabled: yes
+      when: ansible_kernel == "2.6.32-754.el6.x86_64" and  ansible_distribution != "RedHat"

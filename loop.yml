@@ -1,0 +1,26 @@
+---
+- name: Variales holding multiple things and looping trough them
+  hosts: vm1
+  vars:
+    - packages:
+        - httpd
+        - vsftpd
+        - nfs-utils
+        - ntp
+    - services:
+        - httpd
+        - nfs
+        - vsftpd
+        - ntpd
+  tasks:
+    - name: Installing the packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      with_items: "{{ packages }}"
+    - name: starting the services and enabling them
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      with_items: "{{ services }}"
