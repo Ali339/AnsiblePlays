@@ -1,5 +1,5 @@
 ---
-- name: Configuring the Pxe
+- name: Configuring the Pxe server
   hosts: vm1
   vars:
     packages: 
