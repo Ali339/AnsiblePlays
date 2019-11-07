@@ -3,14 +3,14 @@
   hosts: vm1
   vars:
     packages: 
-      - vsftpd
-      - tftp-server
-      - dhcp
-      - syslinux
-    services:
-      - vsftpd
-      - xinetd
-      - dhcpd
+      pack_ftp: vsftpd
+      pack_xin: tftp-server
+      pack_dhcp: dhcp
+      pack_syslinux : syslinux
+    srv:
+      srv_ftp: vsftpd
+      srv_xin:  xinetd
+      srv_dhcp: dhcpd
 
   tasks:
 
@@ -19,9 +19,9 @@
   
     - name: Installing the vsfdtpd, tftp-server, dhcp and syslinux
       yum:
-        name: "{{item }}"
-      with_items:
-        - "{{ packages}}"
+        name: "{{ item.value }}"
+      with_dict: "{{ packages }}"
+
   ##########################################
   #Play 2: Configuring the ftp server
       
@@ -29,18 +29,72 @@
   #    shell: mount -o loop /dev/sr0 /mnt
     - name: Copying iso image under ftp DocumentRoot
       copy:
-        src:  /media/
+        src:  /mnt/
         remote_src: yes
         dest: /var/ftp/pub
   ###########################################
   #Play 3: Configuring the tftp-server
+  #
+  #
     - name: Enabling the tftp in it config file
       replace:
         path: /etc/xinetd.d/tftp
-        regexp: yes
-        replace: no
+        regexp: "yes"
+        replace: "no"
     - name: Copying boot files under tftp DocumentRoot
       copy:
         src: /var/ftp/pub/isolinux/
         remote_src: yes
         dest: /var/lib/tftpboot
+    - name: Creating dir pxelinux.cfg
+      file: 
+        state: directory
+        path: /var/lib/tftpboot/pxelinux.cfg
+    - name: Copying isolinux.cfg under /var/lib/tftpboot/pxelinux.cfg with the name of default
+      copy:
+        src: /var/lib/tftpboot/isolinux.cfg 
+        remote_src: yes
+        dest: /var/lib/tftpboot/pxelinux.cfg/default
+    - name: Copying the pxelinux.0 from the syslinux
+      copy:
+        src: /usr/share/syslinux/pxelinux.0
+        remote_src: yes
+        dest: /var/lib/tftpboot
+ #############################################
+ #Play 4: Configuring DHCP Server
+ #
+    - name: Configring the configuration file for the dhcp
+      blockinfile: 
+        path: /etc/dhcp/dhcpd.conf
+        block:  |
+          default-lease-time 600;
+          max-lease-time 7200;
+          authoritative;
+          allow booting;
+          allow bootp;
+          subnet 192.168.1.0 netmask 255.255.255.0 {
+          range 192.168.1.180 192.168.1.195;
+          next-server  192.168.1.171;
+          filename "pxelinux.0";
+          }
+#########################################################################
+#Play 5: Dealing with iptables and selinux
+#
+    - name: Stoping iptables 
+      service:
+        name: iptables
+        state: stopped
+        enabled: no
+    - name: Selinux Enforcing to permisive
+      selinux: 
+        policy: targeted
+        state: permissive
+#########################################################################
+#Start and enable all services 
+#   
+    - name: starting and enabling services
+      service:
+        name: "{{ item.value }}" 
+        state: started
+        enabled: yes
+      with_dict: "{{ srv }}"
