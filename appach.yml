@@ -10,30 +10,30 @@
         name: 
           - "{{pack}}"
         state: present
-      when: ansible_distribution_major_version == "6"
+      when: ansible_distribution_major_version != "6"
     - name: starting the {{pack}} service
       service:
         name: httpd
         state: started
         enabled: yes
-      when: ansible_distribution_major_version != "7"
+      when: ansible_distribution_major_version != "6"
     - name: punching hole for {{pack}}'s port 80 in {{ip}}
       lineinfile:
         path: /etc/sysconfig/iptables
         insertafter: '--dport 22'
         line: -A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT
         state: present 
-      when: ansible_distribution_major_version == "6"
+      when: ansible_distribution_major_version != "6"
       notify: iptables-restart
     - name: dealing with the selinux
       shell:
         setenforce 0
-      when: ansible_distribution_major_version == "6"
+      when: ansible_distribution_major_version != "6"
     - name: welcome note
       copy:
         content: "WELCOME\nHELLO WORLD!\n"
         dest: "/var/www/html/index.html"
-      when: ansible_distribution_major_version == "6"
+      when: ansible_distribution_major_version != "6"
   handlers:
     - name: iptables-restart
       service:
