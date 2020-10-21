@@ -1,6 +1,6 @@
 ---
 - name: Installing Appache only on centos 6, anyother distri will be skipped  - A demo to use variables, conditions, handlers
-  hosts: vm1
+  hosts: all
   vars:
     pack: httpd
     ip: iptables
