@@ -1,0 +1,10 @@
+---
+  
+- name: test playbook
+  gather_facts: false
+  hosts: all
+  tasks:
+    - name: Creating a file
+      file:
+        path: /tmp/hereyougo.txt
+        state: touch
